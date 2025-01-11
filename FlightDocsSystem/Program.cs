@@ -7,6 +7,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
+using FlightDocsSystem.Filters;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
+using FlightDocsSystem.Models;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +23,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString)
     );
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -44,16 +55,44 @@ builder.Services.AddSwaggerGen(options =>
             new string[] {}
         }
     });
+    options.MapType<FlightStatuses>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Enum = Enum.GetNames(typeof(FlightStatuses))
+                    .Select(name => new OpenApiString(name))
+                    .Cast<IOpenApiAny>()
+                    .ToList()
+    });
+
+
+    options.ResolveConflictingActions(a => a.First());
+
+
+
 });
+
+
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IGroupPermissionService, GroupPermissionService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IFlightService, FlightService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IDocsTypeService, DocsTypeService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+
+builder.Services.AddScoped<IFileService, FileService>();
+
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICheckInput, CheckInputService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 104857600;
+});
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -75,8 +114,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+
+
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("AdminOnly", policy =>
+    {
+        policy.RequireRole("Admin"); 
+    });
+
+    options.AddPolicy("PilotOnly", policy =>
+    {
+        policy.RequireRole("Pilot"); 
+    });
+
+    options.AddPolicy("PilotAndAdminOnly", policy =>
+    {
+        policy.RequireRole("Admin", "Pilot"); 
+    });
+
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.RequireAuthenticatedUser(); // Phai co token
+    });
+
+
     options.AddPolicy("ActiveToken", policy =>
     {
         policy.RequireAssertion(context =>
@@ -85,11 +147,25 @@ builder.Services.AddAuthorization(options =>
             return isActiveClaim != null && isActiveClaim.Value == "True";
         });
     });
-
 });
 
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
+var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+if (!Directory.Exists(uploadPath))
+{
+    Directory.CreateDirectory(uploadPath);
+}
 
 
 if (app.Environment.IsDevelopment())
@@ -97,6 +173,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadPath),
+    RequestPath = "/uploads"
+});
+
+app.UseCors("AllowAll");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -114,7 +198,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
-app.UseMiddleware<CheckActiveAccountMiddleware>();
+app.UseMiddleware<CheckTokenMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

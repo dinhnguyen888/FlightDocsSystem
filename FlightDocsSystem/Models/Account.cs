@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FlightDocsSystem.Models
 {
@@ -12,7 +13,7 @@ namespace FlightDocsSystem.Models
         public string Password { get; set; }
         public string Phone { get; set; }
         public bool IsActive { get; set; } = true ;
-        public string? PermissionName { get; set; }
-        public GroupPermission? Permission { get; set; }
+        public string RoleName { get; set; }
+        public Role Role { get; set; }
     }
 }

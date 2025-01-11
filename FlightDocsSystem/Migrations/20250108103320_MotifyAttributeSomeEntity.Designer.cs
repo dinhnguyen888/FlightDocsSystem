@@ -4,6 +4,7 @@ using FlightDocsSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FlightDocsSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250108103320_MotifyAttributeSomeEntity")]
+    partial class MotifyAttributeSomeEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,8 +122,8 @@ namespace FlightDocsSystem.Migrations
                     b.Property<int>("FlightId")
                         .HasColumnType("int");
 
-                    b.Property<double>("LastestVersion")
-                        .HasColumnType("float");
+                    b.Property<float>("LastestVersion")
+                        .HasColumnType("real");
 
                     b.HasKey("DocumentId");
 
@@ -130,6 +132,36 @@ namespace FlightDocsSystem.Migrations
                     b.HasIndex("FlightId");
 
                     b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("FlightDocsSystem.Models.FileStore", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FileInEntity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileName")
+                        .IsUnique();
+
+                    b.ToTable("FileStores");
                 });
 
             modelBuilder.Entity("FlightDocsSystem.Models.Flight", b =>
@@ -166,6 +198,7 @@ namespace FlightDocsSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SignaturePath")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

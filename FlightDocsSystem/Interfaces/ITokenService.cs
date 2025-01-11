@@ -9,6 +9,7 @@ namespace FlightDocsSystem.Interfaces
         ClaimsPrincipal ValidateToken(string token);
         string GetClaimValue(string token, string claimType);
         string GetTokenFromHTTPContext(IHttpContextAccessor context);
+        string GetRoleNameFromToken(IHttpContextAccessor contextAccessor);
     }
 
 }

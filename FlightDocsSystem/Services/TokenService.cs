@@ -31,7 +31,7 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.NameIdentifier, accountDto.Id.ToString()),
             new Claim(ClaimTypes.Name, accountDto.Name),
             new Claim("IsActive", accountDto.IsActive.ToString()),
-            new Claim(ClaimTypes.Role, accountDto.PermissionName)
+            new Claim(ClaimTypes.Role, accountDto.RoleName)
         };
 
         var token = new JwtSecurityToken(
@@ -85,17 +85,31 @@ public class TokenService : ITokenService
         return claim?.Value;
     }
 
-  public string GetTokenFromHTTPContext(IHttpContextAccessor contextAccessor)
-{
-    var context = contextAccessor.HttpContext;
-    if (context == null)
-        throw new UnauthorizedAccessException("HTTP context is null.");
+    public string GetTokenFromHTTPContext(IHttpContextAccessor contextAccessor)
+    {
+        var context = contextAccessor.HttpContext;
+        if (context == null)
+            throw new UnauthorizedAccessException("HTTP context is null.");
 
-    var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-    if (string.IsNullOrWhiteSpace(token))
-        throw new UnauthorizedAccessException("Token is missing or invalid.");
+        var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+        if (string.IsNullOrWhiteSpace(token))
+            throw new UnauthorizedAccessException("Token is missing or invalid.");
 
-    return token;
-}
+        return token;
+    }
+
+    public string GetRoleNameFromToken(IHttpContextAccessor contextAccessor)
+    {
+        if (contextAccessor.HttpContext == null || contextAccessor.HttpContext.User == null)
+            throw new UnauthorizedAccessException("HTTP context or User is null.");
+
+        var roleNameClaim = contextAccessor.HttpContext.User.Claims
+            .FirstOrDefault(c => c.Type == ClaimTypes.Role); 
+
+        if (roleNameClaim == null)
+            throw new UnauthorizedAccessException("RoleName not found in token.");
+
+        return roleNameClaim.Value;
+    }
 
 }

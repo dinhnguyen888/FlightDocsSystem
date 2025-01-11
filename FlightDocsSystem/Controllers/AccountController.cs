@@ -2,12 +2,13 @@
 using FlightDocsSystem.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace FlightDocsSystem.Controllers
 {
     [ApiController]
-    //[Authorize(Policy = "ActiveToken")]
+    [Authorize(Policy = "AdminOnly")]
     [Route("api/[controller]")]
     public class AccountsController : ControllerBase
     {
@@ -24,8 +25,15 @@ namespace FlightDocsSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var accounts = await _accountService.GetAllAsync();
-            return Ok(accounts);
+            try
+            {
+                var accounts = await _accountService.GetAllAsync();
+                return Ok(accounts);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"An error occurred while retrieving accounts: {ex.Message}" });
+            }
         }
 
         /// <summary>
@@ -34,9 +42,18 @@ namespace FlightDocsSystem.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var account = await _accountService.GetByIdAsync(id);
-            if (account == null) return NotFound(new { message = "Account not found" });
-            return Ok(account);
+            try
+            {
+                var account = await _accountService.GetByIdAsync(id);
+                if (account == null)
+                    return NotFound(new { message = "Account not found" });
+
+                return Ok(account);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"An error occurred while retrieving the account: {ex.Message}" });
+            }
         }
 
         /// <summary>
@@ -45,7 +62,7 @@ namespace FlightDocsSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] AccountCreateDto accountDto)
         {
-          try
+            try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
@@ -53,9 +70,9 @@ namespace FlightDocsSystem.Controllers
                 var createdAccount = await _accountService.CreateAsync(accountDto);
                 return CreatedAtAction(nameof(GetById), new { id = createdAccount.Id }, createdAccount);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return StatusCode(500, new { message = $"An error occurred while creating the account: {ex.Message}" });
             }
         }
 
@@ -65,13 +82,21 @@ namespace FlightDocsSystem.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] AccountUpdateDto accountDto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            var isUpdated = await _accountService.UpdateAsync(id, accountDto);
-            if (!isUpdated) return NotFound(new { message = "Account not found" });
+                var isUpdated = await _accountService.UpdateAsync(id, accountDto);
+                if (!isUpdated)
+                    return NotFound(new { message = "Account not found" });
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"An error occurred while updating the account: {ex.Message}" });
+            }
         }
 
         /// <summary>
@@ -80,10 +105,18 @@ namespace FlightDocsSystem.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var isDeleted = await _accountService.DeleteAsync(id);
-            if (!isDeleted) return NotFound(new { message = "Account not found" });
+            try
+            {
+                var isDeleted = await _accountService.DeleteAsync(id);
+                if (!isDeleted)
+                    return NotFound(new { message = "Account not found" });
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"An error occurred while deleting the account: {ex.Message}" });
+            }
         }
     }
 }

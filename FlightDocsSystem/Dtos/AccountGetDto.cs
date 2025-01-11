@@ -7,7 +7,7 @@
         public string Email { get; set; }
         public string Phone { get; set; }
         public bool IsActive { get; set; }
-        public string PermissionName { get; set; }
+        public string RoleName { get; set; }
 
     }
 }

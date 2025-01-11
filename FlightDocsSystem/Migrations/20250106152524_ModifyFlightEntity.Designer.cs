@@ -4,6 +4,7 @@ using FlightDocsSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FlightDocsSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250106152524_ModifyFlightEntity")]
+    partial class ModifyFlightEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -113,15 +115,11 @@ namespace FlightDocsSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DocumentPath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("FlightId")
                         .HasColumnType("int");
 
-                    b.Property<double>("LastestVersion")
-                        .HasColumnType("float");
+                    b.Property<float>("LastestVersion")
+                        .HasColumnType("real");
 
                     b.HasKey("DocumentId");
 
@@ -150,8 +148,9 @@ namespace FlightDocsSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("FlightStatus")
-                        .HasColumnType("int");
+                    b.Property<string>("FlightStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PointOfLoading")
                         .IsRequired()
@@ -163,9 +162,6 @@ namespace FlightDocsSystem.Migrations
 
                     b.Property<string>("Route")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SignaturePath")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

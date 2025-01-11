@@ -29,7 +29,7 @@ namespace FlightDocsSystem.Services
             if (account == null)
                 throw new UnauthorizedAccessException("Invalid credentials.");
 
-            var token = _tokenService.GenerateToken(_mapper.Map<AccountGetDto>(account));
+            var token =  _tokenService.GenerateToken(_mapper.Map<AccountGetDto>(account));
 
             return token;
         }
@@ -41,7 +41,7 @@ namespace FlightDocsSystem.Services
 
         public async Task<string> RefreshTokenAsync(string oldSessionToken)
         {
-            var principal = _tokenService.ValidateToken(oldSessionToken);
+            var principal =  _tokenService.ValidateToken(oldSessionToken);
             if (principal == null)
                 throw new UnauthorizedAccessException("Invalid token.");
 
@@ -51,7 +51,7 @@ namespace FlightDocsSystem.Services
                 Email = principal.FindFirst(ClaimTypes.Email)?.Value,
                 Name = principal.FindFirst(ClaimTypes.Name)?.Value,
                 IsActive = bool.Parse(principal.FindFirst("IsActive")?.Value),
-                PermissionName = principal.FindFirst(ClaimTypes.Role)?.Value,
+                RoleName = principal.FindFirst(ClaimTypes.Role)?.Value,
                 
              
             };
@@ -61,10 +61,10 @@ namespace FlightDocsSystem.Services
             return newToken;
         }
 
-        public async Task ChangeActiveSessionAsync(int userId)
+        public async Task ChangeActiveSessionAsync(string userId)
         {
             // Tìm tài khoản trong cơ sở dữ liệu
-            var account = await _context.Accounts.SingleOrDefaultAsync(a => a.Id == userId);
+            var account = await _context.Accounts.SingleOrDefaultAsync(a => a.Id.ToString() == userId);
             if (account == null)
                 throw new UnauthorizedAccessException("Account not found.");
 
@@ -89,6 +89,32 @@ namespace FlightDocsSystem.Services
 
             return _mapper.Map<AccountGetDto>(account);
 
+        }
+
+        public async Task<bool> ChangeOwner(string currentOwnerEmail, string newOwnerEmail)
+        {
+            var ownerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Owner");
+            if (ownerRole == null)
+                throw new Exception("Owner role not found in the database");
+
+            var accounts = await _context.Accounts
+                .Include(a => a.Role)
+                .Where(a => a.Email == currentOwnerEmail || a.Email == newOwnerEmail)
+                .ToListAsync();
+
+            var currentOwner = accounts.FirstOrDefault(a => a.Email == currentOwnerEmail);
+            var newOwner = accounts.FirstOrDefault(a => a.Email == newOwnerEmail);
+            if (currentOwner == null)
+                throw new UnauthorizedAccessException($"Current owner '{currentOwnerEmail}' not found");
+            if (newOwner == null)
+                throw new UnauthorizedAccessException($"New owner '{newOwnerEmail}' not found");
+
+
+            currentOwner.IsActive = false;
+            newOwner.Id = ownerRole.Id; 
+
+            await _context.SaveChangesAsync();
+            return true;
         }
 
     }

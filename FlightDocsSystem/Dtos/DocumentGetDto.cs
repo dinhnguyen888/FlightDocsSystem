@@ -8,7 +8,7 @@
         public string DocsTypeName { get; set; }
         public DateTime CreateDate { get; set; }
         public string Creator { get; set; }
-        public float LastestVersion { get; set; } 
+        public double LastestVersion { get; set; } 
 
 
     }

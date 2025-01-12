@@ -10,6 +10,7 @@ namespace FlightDocsSystem.Interfaces
         string GetClaimValue(string token, string claimType);
         string GetTokenFromHTTPContext(IHttpContextAccessor context);
         string GetRoleNameFromToken(IHttpContextAccessor contextAccessor);
+        Task<string> GetEmailFromToken(IHttpContextAccessor contextAccessor);
     }
 
 }

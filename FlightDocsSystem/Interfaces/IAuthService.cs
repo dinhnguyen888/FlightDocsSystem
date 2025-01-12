@@ -7,5 +7,6 @@
         Task<string> RefreshTokenAsync(string oldSessionToken);
         Task ChangeActiveSessionAsync(string userId);
         Task<bool> ChangeOwner(string currentOwnerEmail, string newOwnerEmail);
+        Task<string> ResetPasswordAsync(string email, string newPassword); 
     }
 }

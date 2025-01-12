@@ -112,4 +112,24 @@ public class AuthController : ControllerBase
         }
     }
 
+    [Authorize(Policy = "AllowAll")]
+    [HttpPut("ResetPassword")]
+    public async Task<IActionResult> ResetPassword()
+    {
+        try
+        {
+            var emailClaim = await _tokenService.GetEmailFromToken(_context);
+            var resetPassword = await _authService.ResetPasswordAsync(emailClaim, "Abc123@");
+            return Ok(resetPassword);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Error = ex.Message });
+        }
+    }
+       
 }

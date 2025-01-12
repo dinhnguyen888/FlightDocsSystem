@@ -94,7 +94,7 @@ namespace FlightDocsSystem.Services
 
         public async Task<bool> DeleteAsync(int flightId)
         {
-            var existing = _context.Flights.FirstOrDefaultAsync(f => f.Id==flightId);
+            var existing = await _context.Flights.FirstOrDefaultAsync(f => f.Id==flightId);
             if (existing == null) throw new ArgumentException("Invalid flightID");
             _context.Remove(existing);
             await _context.SaveChangesAsync();

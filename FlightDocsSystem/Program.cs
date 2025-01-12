@@ -120,17 +120,17 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy =>
     {
-        policy.RequireRole("Admin"); 
+        policy.RequireRole("Admin" , "Owner"); 
     });
 
     options.AddPolicy("PilotOnly", policy =>
     {
-        policy.RequireRole("Pilot"); 
+        policy.RequireRole("Pilot", "Owner"); 
     });
 
     options.AddPolicy("PilotAndAdminOnly", policy =>
     {
-        policy.RequireRole("Admin", "Pilot"); 
+        policy.RequireRole("Admin", "Pilot", "Owner"); 
     });
 
     options.AddPolicy("AllowAll", policy =>

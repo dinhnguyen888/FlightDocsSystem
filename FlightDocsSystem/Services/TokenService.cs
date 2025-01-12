@@ -5,6 +5,7 @@ using System.Text;
 using FlightDocsSystem.Dtos;
 using FlightDocsSystem.Interfaces;
 using FlightDocsSystem.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -97,7 +98,15 @@ public class TokenService : ITokenService
 
         return token;
     }
-
+    public async Task<string> GetEmailFromToken(IHttpContextAccessor contextAccessor)
+    {
+        if (contextAccessor.HttpContext == null || contextAccessor.HttpContext.User == null)
+            throw new UnauthorizedAccessException("HTTP context or User is null.");
+        var emailClaim = contextAccessor.HttpContext.User.Claims
+               .FirstOrDefault(c => c.Type == ClaimTypes.Email);
+        if (emailClaim == null) throw new UnauthorizedAccessException("do not have a token or token expired");
+        return emailClaim.Value;
+    }
     public string GetRoleNameFromToken(IHttpContextAccessor contextAccessor)
     {
         if (contextAccessor.HttpContext == null || contextAccessor.HttpContext.User == null)

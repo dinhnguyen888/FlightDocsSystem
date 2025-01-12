@@ -15,12 +15,14 @@ namespace FlightDocsSystem.Services
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly IPasswordHasher _passwordHasher;
-        public AuthService(ITokenService tokenService, AppDbContext context, IMapper mapper, IPasswordHasher passwordHasher)
+        private readonly ICheckInput _checkInput;
+        public AuthService(ITokenService tokenService, AppDbContext context, IMapper mapper, IPasswordHasher passwordHasher, ICheckInput checkInput)
         {
             _tokenService = tokenService;
             _context = context;
             _mapper = mapper;
             _passwordHasher = passwordHasher;
+            _checkInput = checkInput;
         }
 
         public async Task<string> LoginAsync(string email, string password)
@@ -91,6 +93,21 @@ namespace FlightDocsSystem.Services
 
         }
 
+        public async Task<string> ResetPasswordAsync(string email, string newPassword)
+        {
+            var account = await _context.Accounts.SingleOrDefaultAsync(a => a.Email == email);
+            if (account == null)
+                throw new ArgumentException("Email can not found");
+
+            var hashedPassword = _passwordHasher.HashPassword(newPassword);
+            account.Password = hashedPassword;
+
+            _context.Update(account);
+            await _context.SaveChangesAsync();
+            return newPassword;
+        }
+
+
         public async Task<bool> ChangeOwner(string currentOwnerEmail, string newOwnerEmail)
         {
             var ownerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Owner");
@@ -102,20 +119,32 @@ namespace FlightDocsSystem.Services
                 .Where(a => a.Email == currentOwnerEmail || a.Email == newOwnerEmail)
                 .ToListAsync();
 
-            var currentOwner = accounts.FirstOrDefault(a => a.Email == currentOwnerEmail);
+            var currentOwner = accounts.FirstOrDefault(a => a.Email == currentOwnerEmail && a.Role.RoleName == "Owner");
             var newOwner = accounts.FirstOrDefault(a => a.Email == newOwnerEmail);
+
             if (currentOwner == null)
-                throw new UnauthorizedAccessException($"Current owner '{currentOwnerEmail}' not found");
+                throw new UnauthorizedAccessException($"Current owner '{currentOwnerEmail}' not found or this is not an Owner");
             if (newOwner == null)
                 throw new UnauthorizedAccessException($"New owner '{newOwnerEmail}' not found");
 
-
+            // Vô hiệu hóa current owner
             currentOwner.IsActive = false;
-            newOwner.Id = ownerRole.Id; 
 
+            // Ngắt quan hệ hiện tại của newOwner với Role
+            newOwner.Role = null;
+
+            // Lưu thay đổi để ngắt liên kết trước
             await _context.SaveChangesAsync();
+
+            // Thiết lập vai trò mới cho newOwner
+            newOwner.Role = ownerRole;
+
+            // Lưu thay đổi cuối cùng
+            await _context.SaveChangesAsync();
+
             return true;
         }
+
 
     }
 }

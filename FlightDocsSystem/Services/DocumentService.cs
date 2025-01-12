@@ -30,7 +30,7 @@ namespace FlightDocsSystem.Services
         public async Task<List<DocumentGetDto>> GetAsync()
         {
             var documents = await _appDbContext.Documents
-                .Select(d => d.DocsType).ToListAsync();
+                .Include(d => d.DocsType).ToListAsync();
             return _mapper.Map<List<DocumentGetDto>>(documents);
         }
         public async Task<List<DocumentGetDto>> GetOriginalDocsAsync()
